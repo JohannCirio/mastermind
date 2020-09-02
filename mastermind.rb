@@ -1,4 +1,10 @@
 require 'colorize' # https://github.com/fazibear/colorize
+require 'bundler/inline'
+
+gemfile true do
+  source 'http://rubygems.org'
+  gem 'colorize'
+end
 
 WHITE = :light_white
 MAGENTA = :magenta
