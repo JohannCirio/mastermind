@@ -1,10 +1,5 @@
 require 'colorize' # https://github.com/fazibear/colorize
-require 'bundler/inline'
 
-gemfile true do
-  source 'http://rubygems.org'
-  gem 'colorize'
-end
 
 WHITE = :light_white
 MAGENTA = :magenta
@@ -18,6 +13,20 @@ COLLUMS = 0..3
 
 POSSIBLE_COLORS = [WHITE, MAGENTA, BLUE, YELLOW, GREEN, RED]
 
+module CursorControl
+  def clear_screen
+    print "\033[2J"
+  end
+
+  def cursor_up(number_of_lines)
+    print "\033[#{number_of_lines}A"
+  end
+
+  def move_to(line_number, column_number)
+    print "\033[#{line_number};#{column_number}H"
+  end
+end
+
 module Printing
   def print_bar(full_squares_number, max_squares)
     print "||"
@@ -27,23 +36,20 @@ module Printing
   end
 
   def loading_bar
-    puts "Computer is generating password, please wait"
+    puts 'Ok! Computer is generating password, please wait'
     i = 0
-    print_bar(i, 10)
-    while (i <= 10)
+    print_bar(i, 20)
+    while (i <= 20)
       print "\r"
-      print_bar(i, 10)
-      sleep(0.5)
+      print_bar(i, 20)
+      sleep(0.2)
       i += 1
     end
     sleep(1)
-    puts "\rPassword Generated!                     "
+    puts "\rPassword Generated!                            "
     sleep(1)
   end
 
-  def cursor_move_up
-    print "\033[2A"
-  end
 end
 
 module Decoders
@@ -141,19 +147,22 @@ class Board
   end
 
   def graphic_print
-    puts '====================='
-    puts ' | | MASTERMIND | |'
+    puts '============================'
+    puts ' | |     MASTERMIND     | |'
     LINES.each do |i|
       print ' | |'
       print_line(@square_lines_array, i)
       print_line(@circle_lines_array, i)
       puts '| |'
     end
-    puts '====================='
+    puts '============================'
   end
 
   def print_line(array, line_index)
-    array[line_index].each { |element| element.color_print }
+    array[line_index].each do |element| 
+      element.color_print
+      print ' '
+    end
   end
 
   def change_line(type, line_index, colors_array)
@@ -169,10 +178,13 @@ end
 class Mastermind
   include Decoders
   include Printing
+  include CursorControl
   @password = []
 
   def start_game
     @board = Board.new
+    clear_screen
+    move_to(0,0)
     mode_selection == 1? crack_a_code : make_a_code
   end
 
@@ -247,12 +259,12 @@ class Mastermind
     player_guess
   end
 
+  
   def valid_colors?(array_of_colors)
     array_of_colors.none? { |color| color == 'ERROR' }
   end
 
   def play_a_round(round_number)
-    p @password
     player_guess = read_player_guess
     play_result = compare_arrays(@password, player_guess)
     @board.change_line("square", round_number, player_guess)
